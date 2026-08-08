@@ -1,0 +1,17 @@
+import asyncio
+import logging
+import sys
+
+from loader import *
+from handlers import start_bot
+
+
+async def main():
+    dp.include_router(start_bot)
+
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())
