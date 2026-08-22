@@ -5,7 +5,6 @@ load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
 ai_api_token = os.getenv('AI_API_TOKEN')
-proxy_server = os.getenv('PROXY_SERVER')
 
 db_data = {
     "user": os.getenv('USER'),
@@ -15,4 +14,4 @@ db_data = {
     "password": os.getenv('PASSWORD')
 }
 
-__all__ = ['bot_token', 'ai_api_token', 'proxy_server', 'db_data']
+__all__ = ['bot_token', 'ai_api_token', 'db_data']

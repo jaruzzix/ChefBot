@@ -3,12 +3,13 @@ import logging
 import sys
 
 from loader import *
-from handlers import start_bot
+from handlers import *
 
 
 async def main():
-    dp.include_router(start_bot)
+    dp.include_routers(start_bot, compilation_recipes)
 
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 
