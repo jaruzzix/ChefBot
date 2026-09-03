@@ -87,10 +87,11 @@ async def delete_ingredient(call: CallbackQuery, state: FSMContext):
     if ingredients:
         msg = await call.message.answer("Выбери ингредиент из списка",
                              reply_markup=ingredients_ikb(ingredients))
-        await state.update_data(message_id=msg.message_id)
     else:
-        await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
+        msg = await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
                              "Вернитесь назад, чтобы добавить ингредиенты")
+
+    await state.update_data(message_id=msg.message_id)
 
 
 @router.message(CompilationRecipes.AddIngredient)
@@ -119,23 +120,6 @@ async def start_add_ingredients(message: Message, state: FSMContext):
 
     await state.set_state(CompilationRecipes.AddIngredient)
     await message.answer(text=text, reply_markup=cr_menu_kb)
-
-
-@router.callback_query(CompilationRecipes.DeleteIngredient)
-async def delete_ingredient(call: CallbackQuery, state: FSMContext):
-    ingredient_id = int(call.data)
-    data = await state.get_data()
-    ingredients = data["ingredients"]
-    ingredient = ingredients[ingredient_id]
-    ingredients.remove(ingredient)
-
-    if ingredients:
-        await call.message.answer("Выбери ингредиент из списка",
-                                  reply_markup=ingredients_ikb(ingredients))
-        await state.set_state(CompilationRecipes.DeleteIngredient)
-    else:
-        await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
-                                  "Вернитесь назад, чтобы добавить ингредиенты")
 
 
 # Хендлеры для исключений
@@ -176,10 +160,11 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
     if exceptions:
         msg = await call.message.answer("Выбери ингредиент из списка",
                                   reply_markup=ingredients_ikb(exceptions))
-        await state.update_data(message_id=msg.message_id)
     else:
-        await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
+        msg = await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
                                   "Вернитесь назад, чтобы добавить ингредиенты")
+
+    await state.update_data(message_id=msg.message_id)
 
 
 @router.message(CompilationRecipes.AddExceptions)
