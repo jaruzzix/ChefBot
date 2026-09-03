@@ -157,7 +157,9 @@ async def deleting_ingredient_menu(message: Message, state: FSMContext):
 
 @router.message(CompilationRecipes.DeleteException, F.text.lower() == "назад")
 async def stop_deleting_exceptions(message: Message, state: FSMContext):
-    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    data = await state.get_data()
+    msg_id = data["message_id"]
+    await bot.delete_message(chat_id=message.chat.id, message_id=msg_id)
 
     await start_add_exceptions(message, state)
 
