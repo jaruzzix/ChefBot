@@ -166,7 +166,7 @@ async def stop_deleting_exceptions(message: Message, state: FSMContext):
 async def delete_exception(call: CallbackQuery, state: FSMContext):
     exception_id = int(call.data)
     data = await state.get_data()
-    exceptions = data["exception"]
+    exceptions = data["exceptions"]
     exception = exceptions[exception_id]
     exceptions.remove(exception)
 
