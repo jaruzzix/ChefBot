@@ -196,7 +196,7 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
 
 
 # Удаление всех ингредиентов
-@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "удалить все исключения")
+@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "удалить все исключения")
 async def delete_all_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data["ingredients"]
