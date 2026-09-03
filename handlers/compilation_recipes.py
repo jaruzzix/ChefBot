@@ -170,6 +170,7 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
     exception = exceptions[exception_id]
     exceptions.remove(exception)
 
+    await call.message.delete()
     if exceptions:
         msg = await call.message.answer("Выбери ингредиент из списка",
                                   reply_markup=ingredients_ikb(exceptions))
