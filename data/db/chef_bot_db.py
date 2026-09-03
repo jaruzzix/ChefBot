@@ -1,5 +1,3 @@
-import psycopg2
-from psycopg2 import Error
 from data.config import db_data
 from psycopg2 import pool
 

@@ -14,4 +14,9 @@ db_data = {
     "password": os.getenv('PASSWORD')
 }
 
-__all__ = ['bot_token', 'ai_api_token', 'db_data']
+base_url = os.getenv('BASE_URL')
+webhook_url = f"{base_url}/webhook"
+
+admin = os.getenv('ADMIN')
+
+__all__ = ['bot_token', 'ai_api_token', 'db_data', 'webhook_url', 'base_url', 'admin']
