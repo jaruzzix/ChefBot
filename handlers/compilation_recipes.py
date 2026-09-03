@@ -85,9 +85,9 @@ async def delete_ingredient(call: CallbackQuery, state: FSMContext):
 
     await call.message.delete()
     if ingredients:
-        await call.message.answer("Выбери ингредиент из списка",
+        msg = await call.message.answer("Выбери ингредиент из списка",
                              reply_markup=ingredients_ikb(ingredients))
-        await state.set_state(CompilationRecipes.DeleteIngredient)
+        await state.update_data(message_id=msg.message_id)
     else:
         await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
                              "Вернитесь назад, чтобы добавить ингредиенты")
@@ -138,7 +138,7 @@ async def delete_ingredient(call: CallbackQuery, state: FSMContext):
                                   "Вернитесь назад, чтобы добавить ингредиенты")
 
 
-# yyyyyyyy
+# Хендлеры для исключений
 
 @router.message(CompilationRecipes.AddExceptions, F.text.lower() == "удалить исключение")
 async def deleting_ingredient_menu(message: Message, state: FSMContext):
@@ -171,9 +171,9 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
     exceptions.remove(exception)
 
     if exceptions:
-        await call.message.answer("Выбери ингредиент из списка",
+        msg = await call.message.answer("Выбери ингредиент из списка",
                                   reply_markup=ingredients_ikb(exceptions))
-        await state.set_state(CompilationRecipes.DeleteIngredient)
+        await state.update_data(message_id=msg.message_id)
     else:
         await call.message.answer("У вас не осталось добавленных ингредиентов\n\n"
                                   "Вернитесь назад, чтобы добавить ингредиенты")

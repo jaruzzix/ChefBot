@@ -1,10 +1,11 @@
 from aiogram import Router, types
 from loader import db
 from utils.keyboards.reply.main_menu_kb import main_kb
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, StateFilter
 
+router = Router()
+router.message.filter(StateFilter(None))
 
-router = Router(name=__name__)
 
 @router.message(CommandStart())
 async def start(message: types.Message):
