@@ -4,7 +4,9 @@ import os
 load_dotenv()
 
 bot_token = os.getenv('BOT_TOKEN')
+
 ai_api_token = os.getenv('AI_API_TOKEN')
+ai_model = os.getenv('AI_MODEL')
 
 db_data = {
     "user": os.getenv('USER'),
@@ -19,4 +21,10 @@ webhook_url = f"{base_url}/webhook"
 
 admin = os.getenv('ADMIN')
 
-__all__ = ['bot_token', 'ai_api_token', 'db_data', 'webhook_url', 'base_url', 'admin']
+__all__ = ['bot_token',
+           'ai_api_token',
+           'ai_model',
+           'db_data',
+           'webhook_url',
+           'base_url',
+           'admin']
