@@ -7,6 +7,5 @@ class CompilationRecipes(StatesGroup):
     AddExceptions = State()
     DeleteIngredient = State()
     DeleteException = State()
-    FindRecipe = State()
-    FindRecipeWithSelected = State()
-    GetRecipe = State()
+    RecipesListPages = State()
+    ShowRecipe = State()

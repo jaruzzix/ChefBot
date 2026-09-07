@@ -19,7 +19,10 @@ db_data = {
 base_url = os.getenv('BASE_URL')
 webhook_url = f"{base_url}/webhook"
 
-admin = os.getenv('ADMIN')
+prompts_dir = f"{os.path.dirname(os.path.abspath(__file__))}/ai/prompts"
+
+max_page_length = int(os.getenv('MAX_PAGE_LENGTH'))
+max_recipes_count = int(os.getenv('MAX_RECIPES_COUNT'))
 
 __all__ = ['bot_token',
            'ai_api_token',
@@ -27,4 +30,6 @@ __all__ = ['bot_token',
            'db_data',
            'webhook_url',
            'base_url',
-           'admin']
+           'prompts_dir',
+           'max_page_length',
+           'max_recipes_count']

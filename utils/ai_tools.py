@@ -1,6 +1,5 @@
 import requests
 from data.config import ai_api_token, ai_model
-from app import logger
 
 
 def send_prompt(prompt: str):
@@ -26,17 +25,20 @@ def send_prompt(prompt: str):
         response = requests.post(url, headers=headers, json=payload)
 
         if response.status_code != 200:
-            logger.error(f"Puter HTTP Error: {response.status_code}")
+            print(f"Puter HTTP Error: {response.status_code}")
             return None
 
         data = response.json()
         if not data.get("success"):
-            logger.error(f"Puter API Error: {data.get("error")}")
+            print(f"Puter API Error: {data.get("error")}")
             return None
 
         return data["result"]["message"]["content"]
 
     except Exception as err_:
-        logger.error(f"Puter Exception: {err_}")
+        print(f"Puter Exception: {err_}")
         return None
 
+
+def parse_recipes_list(recipes: str):
+    return recipes.split("|")
