@@ -8,7 +8,9 @@ from utils.keyboards.reply.main_menu_kb import main_kb
 from utils.keyboards.reply.compilation_recipes_menu import cr_menu_kb
 from utils.keyboards.reply.exceptions_menu import exceptions_menu_kb
 from utils.keyboards.reply.back import back_kb
+from utils.keyboards.reply.cancel import cancel_kb
 from utils.keyboards.reply.recipe_menu import recipe_menu_kb
+from utils.keyboards.reply.recipes_list_menu import rl_menu_kb
 
 from utils.keyboards.inline.items_list import *
 
@@ -49,7 +51,15 @@ async def compile_recipes(message: Message, state: FSMContext):
     page = data["page"]
 
     if not recipes:
-        await message.answer("Ищу рецепты ...")
+        await message.answer("Ищу рецепты ...", reply_markup=cancel_kb)
+        await state.set_state(CompilationRecipes.SearchRecipes)
+
+        if not ingredients:
+            await message.answer("Подбор рецептов невозможен, пока не добавлен хотя бы один ингредиент\n\n"
+                                 "Запишите ингредиенты, из которых собираетесь готовить", reply_markup=cr_menu_kb)
+            await state.set_state(CompilationRecipes.AddIngredient)
+            return
+
         with open(f"{prompts_dir}/compile_recipes_prompt.txt", "r", encoding="utf-8") as file:
             prompt = file.read()
 
@@ -66,20 +76,61 @@ async def compile_recipes(message: Message, state: FSMContext):
         if recipes_data:
             recipes = parse_recipes_list(recipes_data)
 
-            if recipes != "no_recipes":
-                await message.answer("По вашим требованиям подходят следующие рецепты:",
+            if recipes:
+                await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
+                msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                                      reply_markup=items_list_ikb(recipes, max_page_length))
                 await state.update_data(recipes=recipes)
             else:
-                await message.answer("Не удалось найти рецепты по вашим требованиям")
+                msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
         else:
             await message.answer("Что-то пошло не так. Попробуйте снова через некоторое время",
                                  reply_markup=cr_menu_kb)
             return
     else:
-        await message.answer("По вашим требованиям подходят следующие рецепты:",
+        msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                              reply_markup=items_list_ikb(recipes, max_page_length, page))
+    await state.update_data(message_id=msg.message_id)
     await state.set_state(CompilationRecipes.RecipesListPages)
+
+
+# Отмена поиска
+@router.message(CompilationRecipes.SearchRecipes, F.text.lower() == "отмена")
+async def cancel_searching(message: Message, state: FSMContext):
+    data = await state.get_data()
+    ingredients = data['ingredients']
+
+    await message.answer("Подборка отменена")
+    await message.answer(f"Добавлены ингредиенты:\n"
+                         f"{"\n".join(ingredients)}\n"
+                         f"Можете добавить еще ингредиенты", reply_markup=cr_menu_kb)
+    await state.set_state(CompilationRecipes.AddIngredient)
+
+
+# Назад в меню рецептов
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "изменить настройки")
+async def back_to_rc_menu(message: Message, state: FSMContext):
+    data = await state.get_data()
+    ingredients = data['ingredients']
+
+    await message.answer(f"Добавлены ингредиенты:\n"
+                         f"{"\n".join(ingredients)}\n"
+                         f"Можете добавить еще ингредиенты", reply_markup=cr_menu_kb)
+    await state.set_state(CompilationRecipes.AddIngredient)
+
+
+# Новый подбор в меню рецептов
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "новый подбор")
+async def back_to_rc_menu(message: Message, state: FSMContext):
+    await message.answer("Начинаю новый подбор")
+    await start_recipe_compilation(message, state)
+
+
+# Закрытие меню рецептов
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "закрыть")
+async def back_to_rc_menu(message: Message, state: FSMContext):
+    await message.answer("Подбор закрыт")
+    await state.clear()
 
 
 # Отображение страницы рецептов

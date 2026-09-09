@@ -20,13 +20,13 @@ def items_list_ikb(items: List[str], page_max_length: int | None = None, page: i
         items_lst = items[start_index: end_index]
 
     for item in items_lst:
-        builder.button(text=item, callback_data=str(ingredient_id))
+        builder.row(InlineKeyboardButton(text=item, callback_data=str(ingredient_id)))
         ingredient_id += 1
 
     if page_max_length:
         if page == 0 and page < max_page:
             builder.button(text="След. страница", callback_data=f"page_{page + 1}")
-        elif page == max_page:
+        elif page == max_page and max_page != 0:
             builder.button(text="Пред. страница", callback_data=f"page_{page - 1}")
         else:
             builder.row(
@@ -35,7 +35,6 @@ def items_list_ikb(items: List[str], page_max_length: int | None = None, page: i
             )
 
 
-    builder.adjust(1)
     return builder.as_markup()
 
 def get_page(callback: str):

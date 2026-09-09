@@ -41,4 +41,7 @@ def send_prompt(prompt: str):
 
 
 def parse_recipes_list(recipes: str):
+    if recipes == "no_recipes":
+        return None
+
     return recipes.split("|")
