@@ -88,7 +88,7 @@ async def compile_recipes(message: Message, state: FSMContext):
                                  reply_markup=cr_menu_kb)
             return
     else:
-        msg = await message.answer("", reply_markup=rl_menu_kb)
+        msg = await message.answer("ggg", reply_markup=rl_menu_kb)
         await bot.delete_message(chat_id=message.chat.id, message_id=msg.message_id)
         msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                              reply_markup=items_list_ikb(recipes, max_page_length, page))
