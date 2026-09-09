@@ -88,6 +88,8 @@ async def compile_recipes(message: Message, state: FSMContext):
                                  reply_markup=cr_menu_kb)
             return
     else:
+        msg = await message.answer("", reply_markup=rl_menu_kb)
+        await bot.delete_message(chat_id=message.chat.id, message_id=msg.message_id)
         msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                              reply_markup=items_list_ikb(recipes, max_page_length, page))
     await state.update_data(message_id=msg.message_id)
@@ -107,7 +109,7 @@ async def cancel_searching(message: Message, state: FSMContext):
     await state.set_state(CompilationRecipes.AddIngredient)
 
 
-# Назад в меню рецептов
+# Выбор изменения настроек в меню рецептов
 @router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "изменить настройки")
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()

@@ -25,13 +25,13 @@ def items_list_ikb(items: List[str], page_max_length: int | None = None, page: i
 
     if page_max_length:
         if page == 0 and page < max_page:
-            builder.button(text="След. страница", callback_data=f"page_{page + 1}")
+            builder.row(InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}"))
         elif page == max_page and max_page != 0:
-            builder.button(text="Пред. страница", callback_data=f"page_{page - 1}")
+            builder.row(InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"))
         else:
             builder.row(
-                InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}"),
-                InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}")
+                InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"),
+                InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}")
             )
 
 
