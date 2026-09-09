@@ -26,7 +26,7 @@ router = Router()
 # Начало подбора
 @router.message(StateFilter(None), F.text.lower() == "подобрать рецепты")
 async def start_recipe_compilation(message: Message, state: FSMContext):
-    await state.update_data(ingredients=[], exceptions=[], recipes=[], page=0)
+    await state.update_data(ingredients=[], exceptions=[], orig_ingredients=[], orig_exceptions=[], recipes=[], page=0)
     await state.set_state(CompilationRecipes.AddIngredient)
     await message.answer("Запишите имеющиеся у вас ингредиенты по одному, "
                          "по ним я подберу подходящие рецепты блюд", reply_markup=cr_menu_kb)
@@ -47,8 +47,13 @@ async def compile_recipes(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data["ingredients"]
     exceptions = data["exceptions"]
+    orig_ingredients = data["orig_ingredients"]
+    orig_exceptions = data["orig_exceptions"]
     recipes = data["recipes"]
     page = data["page"]
+
+    if not (ingredients == orig_ingredients) or not (exceptions == orig_exceptions):
+        recipes = []
 
     if not recipes:
         await message.answer("Ищу рецепты ...", reply_markup=cancel_kb)
@@ -80,7 +85,7 @@ async def compile_recipes(message: Message, state: FSMContext):
                 await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
                 msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                                      reply_markup=items_list_ikb(recipes, max_page_length))
-                await state.update_data(recipes=recipes)
+                await state.update_data(recipes=recipes, orig_ingredients=ingredients, orig_exceptions=exceptions)
             else:
                 msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
         else:
@@ -113,7 +118,9 @@ async def cancel_searching(message: Message, state: FSMContext):
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
+    message_id = data['message_id']
 
+    await bot.delete_message(chat_id=message.chat.id, message_id=message_id)
     await message.answer(f"Добавлены ингредиенты:\n"
                          f"{"\n".join(ingredients)}\n"
                          f"Можете добавить еще ингредиенты", reply_markup=cr_menu_kb)
@@ -123,6 +130,10 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
 # Новый подбор в меню рецептов
 @router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "новый подбор")
 async def back_to_rc_menu(message: Message, state: FSMContext):
+    data = await state.get_data()
+    message_id = data['message_id']
+
+    await bot.delete_message(chat_id=message.chat.id, message_id=message_id)
     await message.answer("Начинаю новый подбор")
     await start_recipe_compilation(message, state)
 
@@ -130,6 +141,10 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
 # Закрытие меню рецептов
 @router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "закрыть")
 async def back_to_rc_menu(message: Message, state: FSMContext):
+    data = await state.get_data()
+    message_id = data['message_id']
+
+    await bot.delete_message(chat_id=message.chat.id, message_id=message_id)
     await message.answer("Подбор закрыт")
     await state.clear()
 
@@ -141,9 +156,10 @@ async def show_page(call: CallbackQuery, state: FSMContext):
     recipes = data["recipes"]
     page = get_page(call.data)
 
-    await call.message.answer("По вашим требованиям подходят следующие рецепты:",
+    await call.message.delete()
+    msg = await call.message.answer("По вашим требованиям подходят следующие рецепты:",
                          reply_markup=items_list_ikb(recipes, max_page_length, page))
-    await state.update_data(page=page)
+    await state.update_data(page=page, message_id=msg.message_id)
 
 
 # Показать рецепт
@@ -153,6 +169,8 @@ async def show_recipe(call: CallbackQuery, state: FSMContext):
     recipes = data["recipes"]
     exceptions = data["exceptions"]
     recipe_name = recipes[int(call.data)]
+
+    await call.message.answer("Открываю рецепт ...")
 
     with open(f"{prompts_dir}/get_recipe_prompt.txt", "r", encoding="utf-8") as file:
         prompt = file.read()
