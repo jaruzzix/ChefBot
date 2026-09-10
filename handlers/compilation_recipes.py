@@ -113,7 +113,7 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
 
 
 # Отмена поиска
-@router.message(CompilationRecipes.SearchRecipes, F.text.lower() == "отмена")
+@router.message(CompilationRecipes.SearchRecipes)
 async def cancel_searching(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
