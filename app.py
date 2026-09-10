@@ -48,16 +48,16 @@ async def lifespan(app: FastAPI):
 
         dp.workflow_data["session"] = app.state.http_session
         logger.info("Создана новая сессия")
-        yield
-        # Закрытие сессии
-        await app.state.http_session.close()
-        logger.info("Сессия закрыта")
-
 
         is_Initialised = True
         logger.info("бот запущен")
     except Exception as err_:
         logger.error(f"Ошибка инициализации: {err_}")
+
+    yield
+    # Закрытие сессии
+    await app.state.http_session.close()
+    logger.info("Сессия закрыта")
 
 
 app = FastAPI(lifespan=lifespan)
