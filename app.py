@@ -16,29 +16,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Создаём сессию один раз при старте
-    connector = aiohttp.TCPConnector(limit=100, limit_per_host=30)
-    app.state.http_session = aiohttp.ClientSession(connector=connector)
-
-    # Кладём ту же сессию в workflow_data aiogram
-    dp.workflow_data["session"] = app.state.http_session
-    logger.info("Создана новая сессия")
-    yield
-    # Закрываем при выключении
-    await app.state.http_session.close()
-    logger.info("Сессия закрыта")
-
-
-app = FastAPI(lifespan=lifespan)
 dp.include_routers(start_bot, compilation_recipes)
 
 is_Initialised = False
 
-@app.on_event('startup')
-async def on_startup():
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global is_Initialised
     is_Initialised = False
     logger.info("Запуск инициализации бота ...")
@@ -58,10 +42,25 @@ async def on_startup():
         else:
             logger.info("Обновления не требуются")
 
+        # Создание сессии
+        connector = aiohttp.TCPConnector(limit=100, limit_per_host=30)
+        app.state.http_session = aiohttp.ClientSession(connector=connector)
+
+        dp.workflow_data["session"] = app.state.http_session
+        logger.info("Создана новая сессия")
+        yield
+        # Закрытие сессии
+        await app.state.http_session.close()
+        logger.info("Сессия закрыта")
+
+
         is_Initialised = True
         logger.info("бот запущен")
     except Exception as err_:
         logger.error(f"Ошибка инициализации: {err_}")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/webhook")

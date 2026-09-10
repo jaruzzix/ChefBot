@@ -71,18 +71,21 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
         with open(f"{prompts_dir}/compile_recipes_prompt.txt", "r", encoding="utf-8") as file:
             prompt = file.read()
 
-        ingredients = ", ".join(ingredients)
+        ingredients_str = ", ".join(ingredients)
 
         if not exceptions:
-            exceptions = ""
+            exceptions_str = ""
         else:
-            exceptions = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
+            exceptions_str = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
 
-        prompt = prompt.format(ingredients, exceptions, max_recipes_count)
+        prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
         task = asyncio.create_task(send_prompt(prompt, session))
         await state.update_data(active_task=task)
 
         recipes_data = await task
+
+        if task.cancelled():
+            return
 
         if recipes_data:
             recipes = parse_recipes_list(recipes_data)
