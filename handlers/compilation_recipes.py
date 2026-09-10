@@ -85,6 +85,7 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
         recipes_data = await task
 
         print(task.done())
+        print(await state.get_state())
 
         if task.cancelled():
             return
