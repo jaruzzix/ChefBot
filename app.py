@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     app.state.http_session = aiohttp.ClientSession(connector=connector)
 
     # Кладём ту же сессию в workflow_data aiogram
-    dp.workflow_data["api_session"] = app.state.http_session
+    dp.workflow_data["session"] = app.state.http_session
     logger.info("Создана новая сессия")
     yield
     # Закрываем при выключении
