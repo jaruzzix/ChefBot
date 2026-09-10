@@ -1,5 +1,8 @@
 from aiogram.types import Update
 
+from contextlib import asynccontextmanager
+import aiohttp
+
 from data.config import webhook_url
 from loader import *
 from handlers import *
@@ -13,7 +16,23 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Создаём сессию один раз при старте
+    connector = aiohttp.TCPConnector(limit=100, limit_per_host=30)
+    app.state.http_session = aiohttp.ClientSession(connector=connector)
+
+    # Кладём ту же сессию в workflow_data aiogram
+    dp.workflow_data["api_session"] = app.state.http_session
+    logger.info("Создана новая сессия")
+    yield
+    # Закрываем при выключении
+    await app.state.http_session.close()
+    logger.info("Сессия закрыта")
+
+
+app = FastAPI(lifespan=lifespan)
 dp.include_routers(start_bot, compilation_recipes)
 
 is_Initialised = False

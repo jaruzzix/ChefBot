@@ -19,6 +19,8 @@ from utils.ai_tools import *
 
 from data.config import prompts_dir, max_page_length, max_recipes_count
 from loader import bot
+import asyncio
+import aiohttp
 
 
 router = Router()
@@ -26,7 +28,8 @@ router = Router()
 # Начало подбора
 @router.message(StateFilter(None), F.text.lower() == "подобрать рецепты")
 async def start_recipe_compilation(message: Message, state: FSMContext):
-    await state.update_data(ingredients=[], exceptions=[], orig_ingredients=[], orig_exceptions=[], recipes=[], page=0)
+    await state.update_data(ingredients=[], exceptions=[], orig_ingredients=[], orig_exceptions=[],
+                            recipes=[], page=0, active_task=None)
     await state.set_state(CompilationRecipes.AddIngredient)
     await message.answer("Запишите имеющиеся у вас ингредиенты по одному, "
                          "по ним я подберу подходящие рецепты блюд", reply_markup=cr_menu_kb)
@@ -40,10 +43,10 @@ async def rc_cancel(message: Message, state: FSMContext):
     await message.answer("Подборка отменена", reply_markup=main_kb)
 
 
-# Подбор рецептов
+# Начало Подбора рецептов
 @router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
                 F.text.lower() == "подобрать рецепты")
-async def compile_recipes(message: Message, state: FSMContext):
+async def start_compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
     data = await state.get_data()
     ingredients = data["ingredients"]
     exceptions = data["exceptions"]
@@ -76,7 +79,10 @@ async def compile_recipes(message: Message, state: FSMContext):
             exceptions = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
 
         prompt = prompt.format(ingredients, exceptions, max_recipes_count)
-        recipes_data = send_prompt(prompt)
+        task = asyncio.create_task(send_prompt(prompt, session))
+        await state.update_data(active_task=task)
+
+        recipes_data = await task
 
         if recipes_data:
             recipes = parse_recipes_list(recipes_data)
@@ -85,7 +91,7 @@ async def compile_recipes(message: Message, state: FSMContext):
                 await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
                 msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
                                      reply_markup=items_list_ikb(recipes, max_page_length))
-                await state.update_data(recipes=recipes, orig_ingredients=ingredients, orig_exceptions=exceptions)
+                await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(), orig_exceptions=exceptions.copy())
             else:
                 msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
         else:
@@ -105,6 +111,14 @@ async def compile_recipes(message: Message, state: FSMContext):
 async def cancel_searching(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
+    task = data['active_task']
+
+    if task and not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
     await message.answer("Подборка отменена")
     await message.answer(f"Добавлены ингредиенты:\n"
@@ -164,12 +178,13 @@ async def show_page(call: CallbackQuery, state: FSMContext):
 
 # Показать рецепт
 @router.callback_query(CompilationRecipes.RecipesListPages)
-async def show_recipe(call: CallbackQuery, state: FSMContext):
+async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
     data = await state.get_data()
     recipes = data["recipes"]
     exceptions = data["exceptions"]
     recipe_name = recipes[int(call.data)]
 
+    await call.message.delete()
     await call.message.answer("Открываю рецепт ...")
 
     with open(f"{prompts_dir}/get_recipe_prompt.txt", "r", encoding="utf-8") as file:
@@ -181,7 +196,9 @@ async def show_recipe(call: CallbackQuery, state: FSMContext):
         exceptions = f"Ингредиенты, которые должны быть исключены из приготовления: {', '.join(exceptions)}. "
 
     prompt = prompt.format(recipe_name, exceptions, recipe_name)
-    recipe = send_prompt(prompt)
+    task = asyncio.create_task(send_prompt(prompt, session))
+
+    recipe = await task
 
     if recipe:
         await call.message.answer(recipe, reply_markup=recipe_menu_kb)
@@ -193,7 +210,7 @@ async def show_recipe(call: CallbackQuery, state: FSMContext):
 # Возврат к страницам
 @router.message(CompilationRecipes.ShowRecipe, F.text.lower() == "назад")
 async def back_to_pages(message: Message, state: FSMContext):
-    await compile_recipes(message, state)
+    await start_compile_recipes(message, state)
 
 
 # Переключение режима на добавление исключений

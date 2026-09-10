@@ -1,8 +1,9 @@
 import requests
 from data.config import ai_api_token, ai_model
+import aiohttp
 
 
-def send_prompt(prompt: str):
+async def send_prompt(prompt: str, session: aiohttp.ClientSession):
     url = "https://api.puter.com/drivers/call"
 
     headers = {
@@ -22,18 +23,18 @@ def send_prompt(prompt: str):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        async with session.post(url, headers=headers, json=payload) as response:
 
-        if response.status_code != 200:
-            print(f"Puter HTTP Error: {response.status_code}")
-            return None
+            if response.status != 200:
+                print(f"Puter HTTP Error: {response.status}")
+                return None
 
-        data = response.json()
-        if not data.get("success"):
-            print(f"Puter API Error: {data.get("error")}")
-            return None
+            data = await response.json()
+            if not data.get("success"):
+                print(f"Puter API Error: {data.get("error")}")
+                return None
 
-        return data["result"]["message"]["content"]
+            return data["result"]["message"]["content"]
 
     except Exception as err_:
         print(f"Puter Exception: {err_}")
@@ -45,3 +46,5 @@ def parse_recipes_list(recipes: str):
         return None
 
     return recipes.split("|")
+
+__all__=['send_prompt', 'parse_recipes_list']
