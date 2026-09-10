@@ -84,6 +84,8 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
 
         recipes_data = await task
 
+        print(task.done())
+
         if task.cancelled():
             return
 
@@ -162,7 +164,7 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
     message_id = data['message_id']
 
     await bot.delete_message(chat_id=message.chat.id, message_id=message_id)
-    await message.answer("Подбор закрыт")
+    await message.answer("Подбор закрыт", reply_markup=main_kb)
     await state.clear()
 
 
