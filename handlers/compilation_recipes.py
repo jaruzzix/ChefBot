@@ -43,10 +43,8 @@ async def rc_cancel(message: Message, state: FSMContext):
     await message.answer("Подборка отменена", reply_markup=main_kb)
 
 
-# Начало Подбора рецептов
-@router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
-                F.text.lower() == "подобрать рецепты")
-async def start_compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
+# Функция подбора рецептов
+async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
     data = await state.get_data()
     ingredients = data["ingredients"]
     exceptions = data["exceptions"]
@@ -79,13 +77,8 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
             exceptions_str = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
 
         prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
-        task = asyncio.create_task(send_prompt(prompt, session))
-        await state.update_data(active_task=task)
-
-        recipes_data = await task
-
-        if task.cancelled():
-            return
+        recipes_data = await send_prompt(prompt, session)
+        await asyncio.sleep(3)
 
         if recipes_data:
             recipes = parse_recipes_list(recipes_data)
@@ -93,8 +86,9 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
             if recipes:
                 await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
                 msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
-                                     reply_markup=items_list_ikb(recipes, max_page_length))
-                await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(), orig_exceptions=exceptions.copy())
+                                           reply_markup=items_list_ikb(recipes, max_page_length))
+                await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(),
+                                        orig_exceptions=exceptions.copy())
             else:
                 msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
         else:
@@ -104,9 +98,20 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
     else:
         await message.answer("Возвращаю к списку рецептов", reply_markup=rl_menu_kb)
         msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
-                             reply_markup=items_list_ikb(recipes, max_page_length, page))
+                                   reply_markup=items_list_ikb(recipes, max_page_length, page))
     await state.update_data(message_id=msg.message_id)
     await state.set_state(CompilationRecipes.RecipesListPages)
+
+
+
+# Начало Подбора рецептов
+@router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
+                F.text.lower() == "подобрать рецепты")
+async def start_compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
+    task = asyncio.create_task(compile_recipes(message, state, session))
+    await state.update_data(active_task=task)
+    await task
+    print("тттттт")
 
 
 # Отмена поиска
@@ -162,7 +167,7 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
     message_id = data['message_id']
 
     await bot.delete_message(chat_id=message.chat.id, message_id=message_id)
-    await message.answer("Подбор закрыт")
+    await message.answer("Подбор закрыт", reply_markup=main_kb)
     await state.clear()
 
 

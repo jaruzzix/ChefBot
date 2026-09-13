@@ -1,4 +1,3 @@
-import requests
 from data.config import ai_api_token, ai_model
 import aiohttp
 
@@ -23,18 +22,18 @@ async def send_prompt(prompt: str, session: aiohttp.ClientSession):
     }
 
     try:
-        async with session.post(url, headers=headers, json=payload) as response:
+        response = await session.post(url, headers=headers, json=payload)
 
-            if response.status != 200:
-                print(f"Puter HTTP Error: {response.status}")
-                return None
+        if response.status != 200:
+            print(f"Puter HTTP Error: {response.status}")
+            return None
 
-            data = await response.json()
-            if not data.get("success"):
-                print(f"Puter API Error: {data.get("error")}")
-                return None
+        data = await response.json()
+        if not data.get("success"):
+            print(f"Puter API Error: {data.get("error")}")
+            return None
 
-            return data["result"]["message"]["content"]
+        return data["result"]["message"]["content"]
 
     except Exception as err_:
         print(f"Puter Exception: {err_}")
