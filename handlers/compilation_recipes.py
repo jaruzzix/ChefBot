@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -111,7 +112,6 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
     task = asyncio.create_task(compile_recipes(message, state, session))
     await state.update_data(active_task=task)
     await task
-    print("тттттт")
 
 
 # Отмена поиска
@@ -217,8 +217,8 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.C
 
 # Возврат к страницам
 @router.message(CompilationRecipes.ShowRecipe, F.text.lower() == "назад")
-async def back_to_pages(message: Message, state: FSMContext):
-    await start_compile_recipes(message, state)
+async def back_to_pages(message: Message, state: FSMContext, session: aiohttp.ClientSession):
+    await start_compile_recipes(message, state, session)
 
 
 # Переключение режима на добавление исключений
