@@ -1,7 +1,4 @@
-from asyncio import CancelledError
-
 from aiogram import Router, F
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -22,6 +19,7 @@ from utils.ai_tools import *
 
 from data.config import prompts_dir, max_page_length, max_recipes_count
 from loader import bot
+
 import asyncio
 import aiohttp
 
@@ -81,7 +79,6 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
 
         prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
         recipes_data = await send_prompt(prompt, session)
-        await asyncio.sleep(3)
 
         if recipes_data:
             recipes = parse_recipes_list(recipes_data)
