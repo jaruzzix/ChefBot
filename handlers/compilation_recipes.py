@@ -45,7 +45,9 @@ async def rc_cancel(message: Message, state: FSMContext):
     await message.answer("Подборка отменена", reply_markup=main_kb)
 
 
-# Функция подбора рецептов
+# Начало Подбора рецептов
+@router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
+                F.text.lower() == "подобрать рецепты")
 async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession=None):
     data = await state.get_data()
     ingredients = data["ingredients"]
@@ -83,7 +85,14 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
                 exceptions_str = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
 
             prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
-            recipes_data = await send_prompt(prompt, session)
+            task = asyncio.create_task(send_prompt(prompt, session))
+            await state.update_data(active_task=task)
+            try:
+                recipes_data = await task
+            except asyncio.CancelledError:
+                return
+            finally:
+                await state.update_data(active_task=None)
 
             if recipes_data:
                 recipes = parse_recipes_list(recipes_data)
@@ -106,21 +115,6 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
                                    reply_markup=items_list_ikb(recipes, max_page_length, page))
     await state.update_data(message_id=msg.message_id)
     await state.set_state(CompilationRecipes.RecipesListPages)
-
-
-
-# Начало Подбора рецептов
-@router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
-                F.text.lower() == "подобрать рецепты")
-async def start_compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
-    task = asyncio.create_task(compile_recipes(message, state, session))
-    await state.update_data(active_task=task)
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
-    finally:
-        await state.update_data(active_task=None)
 
 
 # Отмена поиска
@@ -189,8 +183,9 @@ async def show_page(call: CallbackQuery, state: FSMContext):
     await state.update_data(page=page, message_id=msg.message_id)
 
 
-# Функция отображения рецепта
-async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
+# Показать рецепт
+@router.callback_query(CompilationRecipes.RecipesListPages)
+async def show_recipe_processing(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
     data = await state.get_data()
     recipes = data["recipes"]
     exceptions = data["exceptions"]
@@ -210,26 +205,21 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.C
 
     prompt = prompt.format(recipe_name, exceptions, recipe_name)
 
-    recipe = await send_prompt(prompt, session)
+    task = asyncio.create_task(send_prompt(prompt, session))
+
+    await state.update_data(active_task=task)
+    try:
+        recipe = await task
+    except asyncio.CancelledError:
+        return
+    finally:
+        await state.update_data(active_task=None)
 
     if recipe:
         await call.message.answer(recipe, reply_markup=recipe_menu_kb)
         await state.set_state(CompilationRecipes.Recipe)
     else:
         await call.message.answer("Не удалось показать рецепт. Попробуйте снова через некоторое время")
-
-
-# Показать рецепт
-@router.callback_query(CompilationRecipes.RecipesListPages)
-async def start_show_recipe_processing(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
-    task = asyncio.create_task(show_recipe(call, state, session))
-    await state.update_data(active_task=task)
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
-    finally:
-        await state.update_data(active_task=None)
 
 
 # Отмена показа рецепта
@@ -240,15 +230,13 @@ async def cancel_searching(message: Message, state: FSMContext):
 
     if task and not task.done():
         task.cancel()
-
-        await message.answer("Возвращаю к списку ингредиентов")
         await compile_recipes(message, state)
 
 
 # Возврат к страницам
 @router.message(CompilationRecipes.Recipe, F.text.lower() == "назад")
-async def back_to_pages(message: Message, state: FSMContext, session: aiohttp.ClientSession):
-    await start_compile_recipes(message, state, session)
+async def back_to_pages(message: Message, state: FSMContext):
+    await compile_recipes(message, state)
 
 
 # Переключение режима на добавление исключений
