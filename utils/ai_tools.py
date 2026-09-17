@@ -33,7 +33,6 @@ async def send_prompt(prompt: str, session: aiohttp.ClientSession):
                 print(f"Puter API Error: {data.get("error")}")
                 return None
 
-            print(data["result"]["message"]["content"])
             return data["result"]["message"]["content"]
 
     except Exception as err_:

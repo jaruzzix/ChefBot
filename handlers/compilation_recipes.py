@@ -9,6 +9,7 @@ from utils.keyboards.reply.compilation_recipes_menu import cr_menu_kb
 from utils.keyboards.reply.exceptions_menu import exceptions_menu_kb
 from utils.keyboards.reply.back import back_kb
 from utils.keyboards.reply.cancel import cancel_kb
+from utils.keyboards.reply.close import close_kb
 from utils.keyboards.reply.recipe_menu import recipe_menu_kb
 from utils.keyboards.reply.recipes_list_menu import rl_menu_kb
 
@@ -45,7 +46,7 @@ async def rc_cancel(message: Message, state: FSMContext):
 
 
 # Функция подбора рецептов
-async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
+async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession=None):
     data = await state.get_data()
     ingredients = data["ingredients"]
     exceptions = data["exceptions"]
@@ -58,43 +59,47 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
         recipes = []
 
     if not recipes:
-        await message.answer("Ищу рецепты ...", reply_markup=cancel_kb)
-        await state.set_state(CompilationRecipes.SearchRecipes)
+        if not session:
+            msg = await message.answer("Функция подбора рецептов недоступна", reply_markup=close_kb)
 
-        if not ingredients:
-            await message.answer("Подбор рецептов невозможен, пока не добавлен хотя бы один ингредиент\n\n"
-                                 "Запишите ингредиенты, из которых собираетесь готовить", reply_markup=cr_menu_kb)
-            await state.set_state(CompilationRecipes.AddIngredient)
-            return
-
-        with open(f"{prompts_dir}/compile_recipes_prompt.txt", "r", encoding="utf-8") as file:
-            prompt = file.read()
-
-        ingredients_str = ", ".join(ingredients)
-
-        if not exceptions:
-            exceptions_str = ""
         else:
-            exceptions_str = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
+            await message.answer("Ищу рецепты ...", reply_markup=cancel_kb)
+            await state.set_state(CompilationRecipes.SearchRecipes)
 
-        prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
-        recipes_data = await send_prompt(prompt, session)
+            if not ingredients:
+                await message.answer("Подбор рецептов невозможен, пока не добавлен хотя бы один ингредиент\n\n"
+                                     "Запишите ингредиенты, из которых собираетесь готовить", reply_markup=cr_menu_kb)
+                await state.set_state(CompilationRecipes.AddIngredient)
+                return
 
-        if recipes_data:
-            recipes = parse_recipes_list(recipes_data)
+            with open(f"{prompts_dir}/compile_recipes_prompt.txt", "r", encoding="utf-8") as file:
+                prompt = file.read()
 
-            if recipes:
-                await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
-                msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
-                                           reply_markup=items_list_ikb(recipes, max_page_length))
-                await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(),
-                                        orig_exceptions=exceptions.copy())
+            ingredients_str = ", ".join(ingredients)
+
+            if not exceptions:
+                exceptions_str = ""
             else:
-                msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
-        else:
-            await message.answer("Что-то пошло не так. Попробуйте снова через некоторое время",
-                                 reply_markup=cr_menu_kb)
-            return
+                exceptions_str = f"Исключить блюда, содержащие следующие ингредиенты: {', '.join(exceptions)}. "
+
+            prompt = prompt.format(ingredients_str, exceptions_str, max_recipes_count)
+            recipes_data = await send_prompt(prompt, session)
+
+            if recipes_data:
+                recipes = parse_recipes_list(recipes_data)
+
+                if recipes:
+                    await message.answer("Рецепты подобраны", reply_markup=rl_menu_kb)
+                    msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
+                                               reply_markup=items_list_ikb(recipes, max_page_length))
+                    await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(),
+                                            orig_exceptions=exceptions.copy())
+                else:
+                    msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
+            else:
+                await message.answer("Что-то пошло не так. Попробуйте снова через некоторое время")
+                await back_to_rc_menu(message, state)
+                return
     else:
         await message.answer("Возвращаю к списку рецептов", reply_markup=rl_menu_kb)
         msg = await message.answer("По вашим требованиям подходят следующие рецепты:",
@@ -114,6 +119,8 @@ async def start_compile_recipes(message: Message, state: FSMContext, session: ai
         await task
     except asyncio.CancelledError:
         pass
+    finally:
+        await state.update_data(active_task=None)
 
 
 # Отмена поиска
@@ -182,8 +189,7 @@ async def show_page(call: CallbackQuery, state: FSMContext):
     await state.update_data(page=page, message_id=msg.message_id)
 
 
-# Показать рецепт
-@router.callback_query(CompilationRecipes.RecipesListPages)
+# Функция отображения рецепта
 async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
     data = await state.get_data()
     recipes = data["recipes"]
@@ -191,7 +197,8 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.C
     recipe_name = recipes[int(call.data)]
 
     await call.message.delete()
-    await call.message.answer("Открываю рецепт ...")
+    await call.message.answer("Открываю рецепт ...", reply_markup=cancel_kb)
+    await state.set_state(CompilationRecipes.ShowRecipeProcessing)
 
     with open(f"{prompts_dir}/get_recipe_prompt.txt", "r", encoding="utf-8") as file:
         prompt = file.read()
@@ -202,19 +209,44 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, session: aiohttp.C
         exceptions = f"Ингредиенты, которые должны быть исключены из приготовления: {', '.join(exceptions)}. "
 
     prompt = prompt.format(recipe_name, exceptions, recipe_name)
-    task = asyncio.create_task(send_prompt(prompt, session))
 
-    recipe = await task
+    recipe = await send_prompt(prompt, session)
 
     if recipe:
         await call.message.answer(recipe, reply_markup=recipe_menu_kb)
-        await state.set_state(CompilationRecipes.ShowRecipe)
+        await state.set_state(CompilationRecipes.Recipe)
     else:
         await call.message.answer("Не удалось показать рецепт. Попробуйте снова через некоторое время")
 
 
+# Показать рецепт
+@router.callback_query(CompilationRecipes.RecipesListPages)
+async def start_show_recipe_processing(call: CallbackQuery, state: FSMContext, session: aiohttp.ClientSession):
+    task = asyncio.create_task(show_recipe(call, state, session))
+    await state.update_data(active_task=task)
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await state.update_data(active_task=None)
+
+
+# Отмена показа рецепта
+@router.message(CompilationRecipes.ShowRecipeProcessing, F.text.lower() == "отмена")
+async def cancel_searching(message: Message, state: FSMContext):
+    data = await state.get_data()
+    task = data['active_task']
+
+    if task and not task.done():
+        task.cancel()
+
+        await message.answer("Возвращаю к списку ингредиентов")
+        await compile_recipes(message, state)
+
+
 # Возврат к страницам
-@router.message(CompilationRecipes.ShowRecipe, F.text.lower() == "назад")
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "назад")
 async def back_to_pages(message: Message, state: FSMContext, session: aiohttp.ClientSession):
     await start_compile_recipes(message, state, session)
 

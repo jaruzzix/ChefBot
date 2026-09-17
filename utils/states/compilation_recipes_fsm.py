@@ -2,11 +2,11 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class CompilationRecipes(StatesGroup):
-    Create = State()
-    AddIngredient = State()
-    AddExceptions = State()
-    DeleteIngredient = State()
-    DeleteException = State()
-    SearchRecipes = State()
-    RecipesListPages = State()
-    ShowRecipe = State()
+    AddIngredient = State() # Добавление Ингредиентов
+    AddExceptions = State() # Добавление Исключений
+    DeleteIngredient = State() # Удаление Ингредиентов
+    DeleteException = State() # Удаление Исключений
+    SearchRecipes = State() # Поиск Рецептов
+    RecipesListPages = State() # Выбор Рецепта из списка
+    ShowRecipeProcessing = State() # Процесс отображения рецепта
+    Recipe = State() # Рецепт
