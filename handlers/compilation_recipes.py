@@ -1,3 +1,5 @@
+from asyncio import CancelledError
+
 from aiogram import Router, F
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.types import Message, CallbackQuery
@@ -111,7 +113,10 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
 async def start_compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession):
     task = asyncio.create_task(compile_recipes(message, state, session))
     await state.update_data(active_task=task)
-    await task
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
 
 
 # Отмена поиска
@@ -123,16 +128,12 @@ async def cancel_searching(message: Message, state: FSMContext):
 
     if task and not task.done():
         task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
 
-    await message.answer("Подборка отменена")
-    await message.answer(f"Добавлены ингредиенты:\n"
-                         f"{"\n".join(ingredients)}\n"
-                         f"Можете добавить еще ингредиенты", reply_markup=cr_menu_kb)
-    await state.set_state(CompilationRecipes.AddIngredient)
+        await message.answer("Подборка отменена")
+        await message.answer(f"Добавлены ингредиенты:\n"
+                             f"{"\n".join(ingredients)}\n"
+                             f"Можете добавить еще ингредиенты", reply_markup=cr_menu_kb)
+        await state.set_state(CompilationRecipes.AddIngredient)
 
 
 # Выбор изменения настроек в меню рецептов
