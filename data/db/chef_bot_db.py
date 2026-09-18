@@ -108,7 +108,7 @@ class PoolConnection:
 
         data_row = await self._execute("fetch", query, save_id, user_id)
         values = data_row[0][0]
-        data = {"saveid": values[0], "userid": values[1], "username": values[2], "fullname": values[3]}
+        data = {"saveid": values[0], "userid": values[1], "title": values[2], "content": values[3]}
 
         return data
 
