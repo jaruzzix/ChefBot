@@ -19,7 +19,7 @@ from utils.states.compilation_recipes_fsm import CompilationRecipes
 from utils.ai_tools import *
 
 from data.config import prompts_dir, max_page_length, max_recipes_count
-from loader import bot
+from loader import bot, db
 
 import asyncio
 import aiohttp
@@ -31,7 +31,8 @@ router = Router()
 @router.message(StateFilter(None), F.text.lower() == "подобрать рецепты")
 async def start_recipe_compilation(message: Message, state: FSMContext):
     await state.update_data(ingredients=[], exceptions=[], orig_ingredients=[], orig_exceptions=[],
-                            recipes=[], page=0, active_task=None)
+                            recipes=[], page=0, active_task=None, recipes_statuses={}, current_recipe_title="",
+                            current_recipe_text="")
     await state.set_state(CompilationRecipes.AddIngredient)
     await message.answer("Запишите имеющиеся у вас ингредиенты по одному, "
                          "по ним я подберу подходящие рецепты блюд", reply_markup=cr_menu_kb)
@@ -191,6 +192,7 @@ async def show_recipe_processing(call: CallbackQuery, state: FSMContext, session
     exceptions = data["exceptions"]
     recipe_name = recipes[int(call.data)]
 
+
     await call.message.delete()
     await call.message.answer("Открываю рецепт ...", reply_markup=cancel_kb)
     await state.set_state(CompilationRecipes.ShowRecipeProcessing)
@@ -216,7 +218,15 @@ async def show_recipe_processing(call: CallbackQuery, state: FSMContext, session
         await state.update_data(active_task=None)
 
     if recipe:
-        await call.message.answer(recipe, reply_markup=recipe_menu_kb)
+        recipes_statuses = data['recipes_statuses']
+
+        #Если рецепта нет, добавляем в статусы
+        if recipe_name not in recipes_statuses:
+            recipes_statuses[recipe_name] = {"saved": False}
+
+        msg = await call.message.answer(recipe, reply_markup=recipe_menu_kb())
+
+        await state.update_data(current_recipe_title=recipe_name, current_recipe_text=msg.text)
         await state.set_state(CompilationRecipes.Recipe)
     else:
         await call.message.answer("Не удалось показать рецепт. Попробуйте снова через некоторое время")
@@ -233,9 +243,28 @@ async def cancel_searching(message: Message, state: FSMContext):
         await compile_recipes(message, state)
 
 
+# Добавление в избранное
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "добавить в избранное")
+async def add_to_saved(message: Message, state: FSMContext):
+    data = await state.get_data()
+    current_recipe_title = data['current_recipe_title']
+    recipes_statuses = data['recipes_statuses']
+    current_recipe_text = data['current_recipe_text']
+
+    if not recipes_statuses[current_recipe_title]['saved']:
+        await db.saves_add(message.from_user.id, current_recipe_title, current_recipe_text)
+        recipes_statuses[current_recipe_title]['saved'] = True
+
+        await message.answer("Рецепт добавлен в избранное")
+
+    else:
+        await message.answer("Рецепт уже добавлен в избранное")
+
+
 # Возврат к страницам
 @router.message(CompilationRecipes.Recipe, F.text.lower() == "назад")
 async def back_to_pages(message: Message, state: FSMContext):
+    await state.update_data(current_recipe_title='', current_recipe_text='')
     await compile_recipes(message, state)
 
 

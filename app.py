@@ -1,5 +1,3 @@
-import asyncio
-
 from aiogram.types import Update
 
 from contextlib import asynccontextmanager
@@ -7,7 +5,10 @@ import aiohttp
 
 from data.config import webhook_url
 from loader import *
+import loader
+
 from handlers import *
+from data.db.chef_bot_db import *
 
 from fastapi import FastAPI, Request, Response, BackgroundTasks
 import json
@@ -18,7 +19,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-dp.include_routers(start_bot, compilation_recipes)
+dp.include_routers(start_bot, compilation_recipes, saves_handlers)
 
 is_Initialised = False
 
@@ -34,6 +35,12 @@ async def lifespan(app: FastAPI):
 
     dp["session"] = http_session
     logger.info("Создана новая сессия")
+
+    logger.info("Создание пула для соединения с Базой данных ...")
+    pool_connection = await create_pool()
+
+    loader.db = PoolConnection(pool_connection)
+    logger.info("Пул успешно создан")
 
 
     logger.info("Запуск инициализации бота ...")
@@ -62,6 +69,9 @@ async def lifespan(app: FastAPI):
 
     await http_session.close()
     logger.info("Сессия закрыта")
+
+    await db.close_pool_connection()
+    logger.info("Пул закрыт")
 
 
 app = FastAPI(lifespan=lifespan)

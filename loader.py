@@ -12,6 +12,6 @@ session = AiohttpSession()
 
 bot = Bot(token=token, session=session, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
-db = PoolConnection()
+db: PoolConnection | None = None
 
 __all__ = ["bot", "dp", "db"]

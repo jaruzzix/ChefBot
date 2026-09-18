@@ -17,4 +17,4 @@ async def start(message: types.Message):
                          reply_markup=main_kb)
 
     if not db.get_user(user_id):
-        db.add_user(user_id, username, full_name)
+        await db.add_user(user_id, username, full_name)
