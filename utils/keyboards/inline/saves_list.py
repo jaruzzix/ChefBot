@@ -11,7 +11,7 @@ def saves_list_ikb(items: Dict[str, Any], page_max_length: int | None = None, pa
     if len(items) == 0:
         return None
 
-    keys = items.keys()
+    keys = list(items.keys())
 
     if not page_max_length:
         items_keys = keys
