@@ -34,7 +34,7 @@ async def show_saved_list(message: Message, state: FSMContext, pool: PoolConnect
     else:
         await message.answer("Список избранных пуст")
 
-        current_state = state.get_state()
+        current_state = await state.get_state()
         if current_state:
             await state.clear()
 
