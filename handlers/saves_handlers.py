@@ -11,9 +11,10 @@ from utils.keyboards.reply.recipe_menu import *
 from utils.keyboards.reply.main_menu_kb import main_kb
 
 from data.config import saves_max_page_length as max_page_length
-from loader import db, bot
+import loader
 
-
+bot = loader.bot
+db = loader.db
 
 router = Router()
 
