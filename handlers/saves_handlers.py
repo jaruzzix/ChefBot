@@ -25,7 +25,7 @@ async def show_saved_list(message: Message, state: FSMContext, pool: PoolConnect
     saves = await pool.get_all_saves(message.from_user.id)
 
     if saves:
-        await message.answer("Открываю избранное", close_kb)
+        await message.answer("Открываю избранное", reply_markup=close_kb)
         msg = await message.answer("Твои Сохраненные рецепты:",
                                    reply_markup=saves_list_ikb(saves, max_page_length, page))
 
