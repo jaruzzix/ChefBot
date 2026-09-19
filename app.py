@@ -5,7 +5,6 @@ import aiohttp
 
 from data.config import webhook_url
 from loader import *
-import loader
 
 from handlers import *
 from data.db.chef_bot_db import *
@@ -34,12 +33,13 @@ async def lifespan(app: FastAPI):
     http_session = aiohttp.ClientSession(connector=connector)
 
     dp["session"] = http_session
+
     logger.info("Создана новая сессия")
 
     logger.info("Создание пула для соединения с Базой данных ...")
     pool_connection = await create_pool()
 
-    loader.db = PoolConnection(pool_connection)
+    dp["pool"] = PoolConnection(pool_connection)
     logger.info("Пул успешно создан")
 
 
@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI):
     await http_session.close()
     logger.info("Сессия закрыта")
 
-    await db.close_pool_connection()
+    await dp["pool"].close_pool_connection()
     logger.info("Пул закрыт")
 
 

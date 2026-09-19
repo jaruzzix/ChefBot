@@ -11,7 +11,7 @@ def saves_list_ikb(items: Dict[str, Any], page_max_length: int | None = None, pa
     if len(items) == 0:
         return None
 
-    keys = items.keys()
+    keys = list(items.keys())
 
     if not page_max_length:
         items_keys = keys
@@ -20,7 +20,7 @@ def saves_list_ikb(items: Dict[str, Any], page_max_length: int | None = None, pa
         if page > max_page:
             page = max_page
 
-        start_index = page * max_page
+        start_index = (page * page_max_length) * max_page
         end_index = start_index + page_max_length
         items_keys = keys[start_index: end_index]
 
@@ -28,14 +28,15 @@ def saves_list_ikb(items: Dict[str, Any], page_max_length: int | None = None, pa
         builder.row(InlineKeyboardButton(text=items[key]["title"], callback_data=key))
 
     if page_max_length:
-        if page == 0 and page < max_page:
-            builder.row(InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}"))
-        elif page == max_page and max_page != 0:
-            builder.row(InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"))
-        else:
-            builder.row(
-                InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"),
-                InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}")
+        if max_page:
+            if page == 0 and page < max_page:
+                builder.row(InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}"))
+            elif page == max_page and max_page != 0:
+                builder.row(InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"))
+            else:
+                builder.row(
+                    InlineKeyboardButton(text="Пред. страница", callback_data=f"page_{page - 1}"),
+                    InlineKeyboardButton(text="След. страница", callback_data=f"page_{page + 1}")
             )
 
 

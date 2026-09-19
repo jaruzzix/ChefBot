@@ -19,7 +19,8 @@ from utils.states.compilation_recipes_fsm import CompilationRecipes
 from utils.ai_tools import *
 
 from data.config import prompts_dir, max_page_length, max_recipes_count
-from loader import bot, db
+from data.db.chef_bot_db import PoolConnection
+from loader import bot
 
 import asyncio
 import aiohttp
@@ -245,14 +246,14 @@ async def cancel_searching(message: Message, state: FSMContext):
 
 # Добавление в избранное
 @router.message(CompilationRecipes.Recipe, F.text.lower() == "добавить в избранное")
-async def add_to_saved(message: Message, state: FSMContext):
+async def add_to_saved(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
     current_recipe_title = data['current_recipe_title']
     recipes_statuses = data['recipes_statuses']
     current_recipe_text = data['current_recipe_text']
 
     if not recipes_statuses[current_recipe_title]['saved']:
-        await db.saves_add(message.from_user.id, current_recipe_title, current_recipe_text)
+        await pool.saves_add(message.from_user.id, current_recipe_title, current_recipe_text)
         recipes_statuses[current_recipe_title]['saved'] = True
 
         await message.answer("Рецепт добавлен в избранное")
