@@ -75,11 +75,11 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, pool: PoolConnecti
 
 
 @router.message(Saves.Recipe, F.text.lower() == "назад")
-async def back_to_saves_list(message: Message, state: FSMContext, db: PoolConnection):
+async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
     page = data['page']
 
-    await show_saved_list(message, state, db, page)
+    await show_saved_list(message, state, pool, page)
 
 @router.message(Saves.Recipe, F.text.lower() == "удалить из избранного")
 async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConnection):
