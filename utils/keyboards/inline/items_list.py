@@ -15,7 +15,10 @@ def items_list_ikb(items: List[str], page_max_length: int | None = None, page: i
         items_lst = items
     else:
         max_page = -(-len(items) // page_max_length) - 1
-        start_index = (page * page_max_length) * max_page
+        if page > max_page:
+            page = max_page
+
+        start_index = page * page_max_length
         end_index = start_index + page_max_length
         items_lst = items[start_index: end_index]
 

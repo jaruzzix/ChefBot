@@ -20,7 +20,7 @@ def saves_list_ikb(items: Dict[str, Any], page_max_length: int | None = None, pa
         if page > max_page:
             page = max_page
 
-        start_index = (page * page_max_length) * max_page
+        start_index = page * page_max_length
         end_index = start_index + page_max_length
         items_keys = keys[start_index: end_index]
 

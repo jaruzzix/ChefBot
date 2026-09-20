@@ -69,7 +69,7 @@ class PoolConnection:
 
     async def add_user(self, user_id, username, fullname):
         query = """INSERT INTO public.users (userid, username, fullname)
-                                        VALUES ($1, $2, $3);"""
+                    VALUES ($1, $2, $3);"""
 
         await self._execute("execute", query, user_id, username, fullname)
 
@@ -142,14 +142,14 @@ class PoolConnection:
 
     async def del_save(self, user_id, save_id):
         query = """DELETE FROM public.saved
-                    WHERE "saveid"=$1 AND "userid"=$2"""
+                    WHERE "saveid"=$1 AND "userid"=$2;"""
 
         await self._execute("execute", query, save_id, user_id)
 
 
     async def del_all_saves(self, user_id):
         query = """DELETE FROM public.saved
-                            WHERE "userid"=$1"""
+                            WHERE "userid"=$1;"""
 
         await self._execute("execute", query, user_id)
 

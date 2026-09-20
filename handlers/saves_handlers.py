@@ -81,11 +81,12 @@ async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConn
 
     await show_saved_list(message, state, pool, page)
 
+
 @router.message(Saves.Recipe, F.text.lower() == "удалить из избранного")
-async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConnection):
+async def delete_save(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
 
     await pool.del_save(message.from_user.id, data["current_save_id"])
     await message.answer("Рецепт успешно удален из избранного. Возвращаю к списку")
-    await back_to_saves_list(message, state)
+    await back_to_saves_list(message, state, pool)
 
