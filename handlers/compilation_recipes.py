@@ -138,7 +138,7 @@ async def cancel_searching(message: Message, state: FSMContext):
 
 
 # Выбор изменения настроек в меню рецептов
-@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "изменить настройки")
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower().in_(["изменить настройки", "назад"]))
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
