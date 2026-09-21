@@ -64,7 +64,7 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
 
     if not recipes:
         if not session:
-            msg = await message.answer("Функция подбора рецептов недоступна", reply_markup=close_kb)
+            msg = await message.answer("Функция подбора рецептов сейчас недоступна", reply_markup=close_kb)
 
         else:
             await message.answer("Ищу рецепты ...", reply_markup=cancel_kb)
@@ -106,7 +106,8 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
                     await state.update_data(recipes=recipes, orig_ingredients=ingredients.copy(),
                                             orig_exceptions=exceptions.copy())
                 else:
-                    msg = await message.answer("Не удалось найти рецепты по вашим требованиям", back_kb)
+                    msg = await message.answer("Не удалось найти рецепты по вашим требованиям",
+                                               reply_markup=back_kb)
             else:
                 await message.answer("Что-то пошло не так. Попробуйте снова через некоторое время")
                 await back_to_rc_menu(message, state)
