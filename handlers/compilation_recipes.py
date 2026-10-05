@@ -231,7 +231,9 @@ async def show_recipe_processing(call: CallbackQuery, state: FSMContext, session
         await state.update_data(current_recipe_title=recipe_name, current_recipe_text=msg.text)
         await state.set_state(CompilationRecipes.Recipe)
     else:
-        await call.message.answer("Не удалось показать рецепт. Попробуйте снова через некоторое время")
+        await call.message.answer("Не удалось показать рецепт. Попробуйте снова через некоторое время",
+                                  reply_markup=back_kb)
+        await state.set_state(CompilationRecipes.RecipeNotShowed)
 
 
 # Отмена показа рецепта
@@ -285,7 +287,8 @@ async def del_from_saved(message: Message, state: FSMContext, pool: PoolConnecti
 
 
 # Возврат к страницам
-@router.message(CompilationRecipes.Recipe, F.text.lower() == "↩️ назад")
+@router.message(StateFilter(CompilationRecipes.Recipe, CompilationRecipes.RecipeNotShowed),
+                F.text.lower() == "↩️ назад")
 async def back_to_pages(message: Message, state: FSMContext):
     await state.update_data(current_recipe_title='', current_recipe_text='')
     await compile_recipes(message, state)
@@ -358,7 +361,7 @@ async def delete_ingredient(call: CallbackQuery, state: FSMContext):
 
 
 # Удаление всех ингредиентов
-@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "⛔ удалить все ингредиенты")
+@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "⛔ удалить все\n ингредиенты")
 async def delete_all_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data["ingredients"]
@@ -453,7 +456,7 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
 
 
 # Удаление всех ингредиентов
-@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "⛔ удалить все исключения")
+@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "⛔ удалить все\n исключения")
 async def delete_all_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     exceptions = data["exceptions"]

@@ -10,3 +10,4 @@ class CompilationRecipes(StatesGroup):
     RecipesListPages = State() # Выбор Рецепта из списка
     ShowRecipeProcessing = State() # Процесс отображения рецепта
     Recipe = State() # Рецепт
+    RecipeNotShowed = State() # Рецепт по какой-то причине не удалось открыть
