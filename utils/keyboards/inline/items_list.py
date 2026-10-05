@@ -23,7 +23,7 @@ def items_list_ikb(items: List[str], page_max_length: int | None = None, page: i
         items_lst = items[start_index: end_index]
 
     for item in items_lst:
-        builder.row(InlineKeyboardButton(text=item, callback_data=str(ingredient_id)))
+        builder.row(InlineKeyboardButton(text=item, callback_data=str(ingredient_id + (5 * page))))
         ingredient_id += 1
 
     if page_max_length:

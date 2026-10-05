@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 builder = ReplyKeyboardBuilder()
 
-buttons = ["Подобрать рецепты", "Исключения", "Удалить ингредиент", "Удалить все ингредиенты", "Отмена"]
+buttons = ["🍳 Подобрать рецепты", "🚫 Исключения", "🗑 Удалить ингредиент", "⛔ Удалить все ингредиенты", "❌ Отмена"]
 
 for text in buttons:
     builder.button(text=text)

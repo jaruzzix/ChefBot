@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 builder = ReplyKeyboardBuilder()
 
-builder.button(text="Назад")
+builder.button(text="↩️ Назад")
 
 
 back_kb =builder.as_markup()

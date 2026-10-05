@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 builder = ReplyKeyboardBuilder()
 
-builder.button(text="Отмена")
+builder.button(text="❌ Отмена")
 
 
 cancel_kb =builder.as_markup()

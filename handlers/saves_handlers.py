@@ -20,7 +20,7 @@ router = Router()
 
 
 # Показать список избранного. Вход в машину состояний
-@router.message(StateFilter(None), F.text.lower() == 'избранное')
+@router.message(StateFilter(None), F.text.lower() == '⭐️ избранное')
 async def show_saved_list(message: Message, state: FSMContext, pool: PoolConnection, page: int = 0):
     saves = await pool.get_all_saves(message.from_user.id)
 
@@ -40,7 +40,7 @@ async def show_saved_list(message: Message, state: FSMContext, pool: PoolConnect
 
 
 # Закрыть список рецептов
-@router.message(Saves.SavesList, F.text.lower() == 'закрыть')
+@router.message(Saves.SavesList, F.text.lower() == '❌ закрыть')
 async def close_list(message: Message, state: FSMContext):
     data = await state.get_data()
     message_id = data['message_id']
@@ -74,7 +74,7 @@ async def show_recipe(call: CallbackQuery, state: FSMContext, pool: PoolConnecti
     await state.update_data(current_save_id=call.data)
 
 
-@router.message(Saves.Recipe, F.text.lower() == "назад")
+@router.message(Saves.Recipe, F.text.lower() == "↩️ назад")
 async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
     page = data['page']
@@ -82,7 +82,7 @@ async def back_to_saves_list(message: Message, state: FSMContext, pool: PoolConn
     await show_saved_list(message, state, pool, page)
 
 
-@router.message(Saves.Recipe, F.text.lower() == "удалить из избранного")
+@router.message(Saves.Recipe, F.text.lower() == "🗑 удалить из избранного")
 async def delete_save(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
 

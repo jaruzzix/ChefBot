@@ -29,7 +29,7 @@ import aiohttp
 router = Router()
 
 # Начало подбора
-@router.message(StateFilter(None), F.text.lower() == "подобрать рецепты")
+@router.message(StateFilter(None), F.text.lower() == "📖 подобрать рецепты")
 async def start_recipe_compilation(message: Message, state: FSMContext):
     await state.update_data(ingredients=[], exceptions=[], orig_ingredients=[], orig_exceptions=[],
                             recipes=[], page=0, active_task=None, recipes_statuses={}, current_recipe_title="",
@@ -41,7 +41,7 @@ async def start_recipe_compilation(message: Message, state: FSMContext):
 
 # Отмена подбора
 @router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
-                F.text.lower() == "отмена")
+                F.text.lower() == "❌ отмена")
 async def rc_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Подборка отменена", reply_markup=main_kb)
@@ -49,7 +49,7 @@ async def rc_cancel(message: Message, state: FSMContext):
 
 # Начало Подбора рецептов
 @router.message(StateFilter(CompilationRecipes.AddIngredient, CompilationRecipes.AddExceptions),
-                F.text.lower() == "подобрать рецепты")
+                F.text.lower() == "🍳 подобрать рецепты")
 async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.ClientSession=None):
     data = await state.get_data()
     ingredients = data["ingredients"]
@@ -121,7 +121,7 @@ async def compile_recipes(message: Message, state: FSMContext, session: aiohttp.
 
 
 # Отмена поиска
-@router.message(CompilationRecipes.SearchRecipes, F.text.lower() == "отмена")
+@router.message(CompilationRecipes.SearchRecipes, F.text.lower() == "❌ отмена")
 async def cancel_searching(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
@@ -138,7 +138,7 @@ async def cancel_searching(message: Message, state: FSMContext):
 
 
 # Выбор изменения настроек в меню рецептов
-@router.message(CompilationRecipes.RecipesListPages, F.text.lower().in_(["изменить настройки", "назад"]))
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower() == "⚙️ изменить настройки")
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
@@ -152,7 +152,7 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
 
 
 # Новый подбор в меню рецептов
-@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "новый подбор")
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "🔄 новый подбор")
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     message_id = data['message_id']
@@ -163,7 +163,7 @@ async def back_to_rc_menu(message: Message, state: FSMContext):
 
 
 # Закрытие меню рецептов
-@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "закрыть")
+@router.message(CompilationRecipes.RecipesListPages, F.text.lower()  == "❌ закрыть")
 async def back_to_rc_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     message_id = data['message_id']
@@ -235,7 +235,7 @@ async def show_recipe_processing(call: CallbackQuery, state: FSMContext, session
 
 
 # Отмена показа рецепта
-@router.message(CompilationRecipes.ShowRecipeProcessing, F.text.lower() == "отмена")
+@router.message(CompilationRecipes.ShowRecipeProcessing, F.text.lower() == "❌ отмена")
 async def cancel_searching(message: Message, state: FSMContext):
     data = await state.get_data()
     task = data['active_task']
@@ -246,7 +246,7 @@ async def cancel_searching(message: Message, state: FSMContext):
 
 
 # Добавление в избранное
-@router.message(CompilationRecipes.Recipe, F.text.lower() == "добавить в избранное")
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "⭐ добавить в избранное")
 async def add_to_saved(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
     current_recipe_title = data['current_recipe_title']
@@ -264,7 +264,7 @@ async def add_to_saved(message: Message, state: FSMContext, pool: PoolConnection
         await message.answer("Рецепт уже добавлен в избранное", reply_markup=rm_with_del_save_kb())
 
 
-@router.message(CompilationRecipes.Recipe, F.text.lower() == "удалить из избранного")
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "🗑 удалить из избранного")
 async def del_from_saved(message: Message, state: FSMContext, pool: PoolConnection):
     data = await state.get_data()
     current_recipe_title = data['current_recipe_title']
@@ -285,14 +285,14 @@ async def del_from_saved(message: Message, state: FSMContext, pool: PoolConnecti
 
 
 # Возврат к страницам
-@router.message(CompilationRecipes.Recipe, F.text.lower() == "назад")
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "↩️ назад")
 async def back_to_pages(message: Message, state: FSMContext):
     await state.update_data(current_recipe_title='', current_recipe_text='')
     await compile_recipes(message, state)
 
 
 # Переключение режима на добавление исключений
-@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "исключения")
+@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "🚫 исключения")
 async def start_add_exceptions(message: Message, state: FSMContext):
     await state.set_state(CompilationRecipes.AddExceptions)
     data = await state.get_data()
@@ -311,7 +311,7 @@ async def start_add_exceptions(message: Message, state: FSMContext):
 
 
 # Переключение на режим удаления ингредиентов
-@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "удалить ингредиент")
+@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "🗑 удалить ингредиент")
 async def deleting_ingredient_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data["ingredients"]
@@ -328,7 +328,7 @@ async def deleting_ingredient_menu(message: Message, state: FSMContext):
 
 
 # Отмена удаления добавленных ингредиентов
-@router.message(CompilationRecipes.DeleteIngredient, F.text.lower() == "назад")
+@router.message(CompilationRecipes.DeleteIngredient, F.text.lower() == "↩️ назад")
 async def stop_deleting_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     msg_id = data["message_id"]
@@ -358,7 +358,7 @@ async def delete_ingredient(call: CallbackQuery, state: FSMContext):
 
 
 # Удаление всех ингредиентов
-@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "удалить все ингредиенты")
+@router.message(CompilationRecipes.AddIngredient, F.text.lower() == "⛔ удалить все ингредиенты")
 async def delete_all_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data["ingredients"]
@@ -387,7 +387,7 @@ async def add_ingredient(message: Message, state: FSMContext):
 
 
 # Переключение режима на добавление ингредиентов
-@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "ингредиенты")
+@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "📋 ингредиенты")
 async def start_add_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     ingredients = data['ingredients']
@@ -407,7 +407,7 @@ async def start_add_ingredients(message: Message, state: FSMContext):
 # Хендлеры для исключений
 
 # Переключение режима на удаление исключений
-@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "удалить исключение")
+@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "🗑 удалить исключение")
 async def deleting_ingredient_menu(message: Message, state: FSMContext):
     data = await state.get_data()
     exceptions = data["exceptions"]
@@ -423,7 +423,7 @@ async def deleting_ingredient_menu(message: Message, state: FSMContext):
 
 
 # Отмена удаления исключений
-@router.message(CompilationRecipes.DeleteException, F.text.lower() == "назад")
+@router.message(CompilationRecipes.DeleteException, F.text.lower() == "↩️ назад")
 async def stop_deleting_exceptions(message: Message, state: FSMContext):
     data = await state.get_data()
     msg_id = data["message_id"]
@@ -453,7 +453,7 @@ async def delete_exception(call: CallbackQuery, state: FSMContext):
 
 
 # Удаление всех ингредиентов
-@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "удалить все исключения")
+@router.message(CompilationRecipes.AddExceptions, F.text.lower() == "⛔ удалить все исключения")
 async def delete_all_ingredients(message: Message, state: FSMContext):
     data = await state.get_data()
     exceptions = data["exceptions"]
