@@ -273,6 +273,10 @@ async def del_from_saved(message: Message, state: FSMContext, pool: PoolConnecti
     if recipes_statuses[current_recipe_title]['saved']:
         await pool.del_save(message.from_user.id, recipes_statuses[current_recipe_title]['uuid'])
         recipes_statuses[current_recipe_title]['saved'] = False
+        try:
+            del recipes_statuses[current_recipe_title]['uuid']
+        except KeyError:
+            pass
 
         await message.answer("Рецепт удален из избранного", reply_markup=recipe_menu_kb())
 
