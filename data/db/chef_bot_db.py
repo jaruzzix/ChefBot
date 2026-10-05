@@ -97,9 +97,11 @@ class PoolConnection:
 
     async def saves_add(self, user_id, title, content):
         query = """INSERT INTO public.saved (userid, title, content)
-                    VALUES ($1, $2, $3);"""
+                    VALUES ($1, $2, $3)
+                    RETURNING saveid;"""
 
-        await self._execute("execute", query, user_id, title, content)
+        data_row = await self._execute("fetch", query, user_id, title, content)
+        return data_row[0][0]
 
 
     async def get_save(self, user_id, save_id):
@@ -156,5 +158,6 @@ class PoolConnection:
 
     async def close_pool_connection(self):
         await self.pool.close()
+
 
 __all__ = ['create_pool', 'PoolConnection']

@@ -10,7 +10,7 @@ from utils.keyboards.reply.exceptions_menu import exceptions_menu_kb
 from utils.keyboards.reply.back import back_kb
 from utils.keyboards.reply.cancel import cancel_kb
 from utils.keyboards.reply.close import close_kb
-from utils.keyboards.reply.recipe_menu import recipe_menu_kb
+from utils.keyboards.reply.recipe_menu import recipe_menu_kb, rm_with_del_save_kb
 from utils.keyboards.reply.recipes_list_menu import rl_menu_kb
 
 from utils.keyboards.inline.items_list import *
@@ -254,13 +254,30 @@ async def add_to_saved(message: Message, state: FSMContext, pool: PoolConnection
     current_recipe_text = data['current_recipe_text']
 
     if not recipes_statuses[current_recipe_title]['saved']:
-        await pool.saves_add(message.from_user.id, current_recipe_title, current_recipe_text)
+        recipe_uuid = await pool.saves_add(message.from_user.id, current_recipe_title, current_recipe_text)
         recipes_statuses[current_recipe_title]['saved'] = True
+        recipes_statuses[current_recipe_title]['uuid'] = recipe_uuid
 
-        await message.answer("Рецепт добавлен в избранное")
+        await message.answer("Рецепт добавлен в избранное", reply_markup=rm_with_del_save_kb())
 
     else:
-        await message.answer("Рецепт уже добавлен в избранное")
+        await message.answer("Рецепт уже добавлен в избранное", reply_markup=rm_with_del_save_kb())
+
+
+@router.message(CompilationRecipes.Recipe, F.text.lower() == "удалить из избранного")
+async def del_from_saved(message: Message, state: FSMContext, pool: PoolConnection):
+    data = await state.get_data()
+    current_recipe_title = data['current_recipe_title']
+    recipes_statuses = data['recipes_statuses']
+
+    if recipes_statuses[current_recipe_title]['saved']:
+        await pool.del_save(message.from_user.id, recipes_statuses[current_recipe_title]['uuid'])
+        recipes_statuses[current_recipe_title]['saved'] = False
+
+        await message.answer("Рецепт удален из избранного", reply_markup=recipe_menu_kb())
+
+    else:
+        await message.answer("Рецепта нет в избранном", reply_markup=recipe_menu_kb())
 
 
 # Возврат к страницам
